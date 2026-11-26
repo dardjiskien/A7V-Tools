@@ -1,10 +1,16 @@
 // Service worker : met toute l'app en cache pour un usage 100 % hors-ligne.
 // Incrémente CACHE_VERSION à chaque modification de index.html.
-const CACHE_VERSION = 'a7v-stacking-v9';
+const CACHE_VERSION = 'a7v-stacking-v10';
 const ASSETS = ['./', './index.html', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_VERSION).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: 'reload' : on ignore le cache HTTP de Safari (GitHub Pages autorise 10 min),
+  // sinon une nouvelle version pourrait embarquer l'ancien index.html.
+  event.waitUntil(
+    caches.open(CACHE_VERSION)
+      .then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
