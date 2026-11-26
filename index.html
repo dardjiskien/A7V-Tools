@@ -753,6 +753,16 @@
     #tab-calculator .inc-number { font-size: 34px; }
     #tab-calculator .digit-cell { width: 36px; height: 42px; font-size: 22px; }
     #tab-calculator .fixed-pill { padding: 10px 12px; font-size: 13px; }
+
+    /* ===== Emphase temporaire du cadre au changement de verdict ===== */
+    .result-card { --flash: rgba(255, 107, 0, 0.95); }
+    .result-card.single-ok { --flash: rgba(16, 185, 129, 0.95); }
+    @keyframes verdictFlash {
+      0%   { box-shadow: 0 0 0 0 var(--flash), 0 10px 28px rgba(0,0,0,0.45); }
+      20%  { box-shadow: 0 0 0 6px var(--flash), 0 0 24px 4px var(--flash); }
+      100% { box-shadow: 0 0 0 0 var(--flash), 0 10px 28px rgba(0,0,0,0.45); }
+    }
+    .result-card.verdict-flash { animation: verdictFlash 0.9s ease-out; }
   </style>
 </head>
 <body>
@@ -1066,7 +1076,7 @@
       // ============================================================
       // 1. MODE HORS-LIGNE : enregistrement du service worker (sw.js)
       // ============================================================
-      const APP_VERSION = 'v8';
+      const APP_VERSION = 'v9';
 
       function setupPwaMetadataAndCache() {
         const offlinePill = document.getElementById('offline-indicator');
@@ -1275,88 +1285,18 @@
       }
 
       // ============================================================
-      // 6 bis. ALERTE DE CHANGEMENT DE VERDICT (retour haptique + bip)
+      // 6 bis. ALERTE VISUELLE DE CHANGEMENT DE VERDICT
       // ============================================================
-      // iOS Safari n'implémente pas navigator.vibrate : on bascule un interrupteur
-      // <input type=checkbox switch> caché, qui déclenche le retour haptique système (iOS 18+).
-      const hapticLabel = (() => {
-        const label = document.createElement('label');
-        label.setAttribute('aria-hidden', 'true');
-        label.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;';
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.setAttribute('switch', '');
-        input.tabIndex = -1;
-        label.appendChild(input);
-        document.body.appendChild(label);
-        return label;
-      })();
-
-      function hapticPulse(count) {
-        if (navigator.vibrate) {
-          navigator.vibrate(60);
-          return;
-        }
-        try { hapticLabel.click(); } catch (e) {}
-      }
-
-      let audioCtx = null;
-      function unlockAudio() {
-        try {
-          // Session audio par défaut : le bip respecte le mode silencieux de l'iPhone
-          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          if (audioCtx.state === 'suspended') audioCtx.resume();
-        } catch (e) {}
-      }
-      // L'audio iOS doit être débloqué par un geste de l'utilisateur
-      ['pointerdown', 'touchstart', 'touchend', 'pointerup', 'click'].forEach((ev) =>
-        document.addEventListener(ev, unlockAudio, { passive: true })
-      );
-
-      function beep(freqs) {
-        if (!audioCtx) return;
-        try {
-          const t0 = audioCtx.currentTime;
-          freqs.forEach((f, i) => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            const start = t0 + i * 0.13;
-            osc.type = 'sine';
-            osc.frequency.value = f;
-            gain.gain.setValueAtTime(0.0001, start);
-            gain.gain.exponentialRampToValueAtTime(0.35, start + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.11);
-            osc.connect(gain).connect(audioCtx.destination);
-            osc.start(start);
-            osc.stop(start + 0.12);
-          });
-        } catch (e) {}
-      }
-
+      // Le cadre de la carte de verdict s'épaissit brièvement (même effet dans les deux sens)
       let lastVerdictSingle = null;
       function alertVerdictChange(isSingle) {
         if (lastVerdictSingle !== null && lastVerdictSingle !== isSingle) {
-          const ua = navigator.userActivation;
-          if (ua && !ua.isActive) {
-            pendingAlert = true; // iOS bloque haptique/son pendant le glissement : on attend le lever du doigt
-          } else {
-            fireAlert();
-          }
+          resultCard.classList.remove('verdict-flash');
+          void resultCard.offsetWidth; // relance l'animation même si elle est en cours
+          resultCard.classList.add('verdict-flash');
         }
         lastVerdictSingle = isSingle;
       }
-
-      // Même signal dans les deux sens : 1 pulsation + 1 bip
-      let pendingAlert = false;
-      function fireAlert() {
-        pendingAlert = false;
-        unlockAudio();
-        hapticPulse(1);
-        beep([1000]);
-      }
-      ['touchend', 'pointerup', 'change'].forEach((ev) =>
-        document.addEventListener(ev, () => { if (pendingAlert) fireAlert(); }, { passive: true })
-      );
 
       // ============================================================
       // 7. MISE À JOUR DE L'INTERFACE
