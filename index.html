@@ -1273,6 +1273,82 @@
       }
 
       // ============================================================
+      // 6 bis. ALERTE DE CHANGEMENT DE VERDICT (retour haptique + bip)
+      // ============================================================
+      // iOS Safari n'implémente pas navigator.vibrate : on bascule un interrupteur
+      // <input type=checkbox switch> caché, qui déclenche le retour haptique système (iOS 18+).
+      const hapticLabel = (() => {
+        const label = document.createElement('label');
+        label.setAttribute('aria-hidden', 'true');
+        label.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.setAttribute('switch', '');
+        input.tabIndex = -1;
+        label.appendChild(input);
+        document.body.appendChild(label);
+        return label;
+      })();
+
+      function hapticPulse(count) {
+        if (navigator.vibrate) {
+          navigator.vibrate(count === 1 ? 60 : [60, 90, 60]);
+          return;
+        }
+        for (let i = 0; i < count; i++) {
+          setTimeout(() => { try { hapticLabel.click(); } catch (e) {} }, i * 140);
+        }
+      }
+
+      let audioCtx = null;
+      function unlockAudio() {
+        try {
+          // « playback » : le bip sonne même si l'iPhone est en mode silencieux
+          if (navigator.audioSession) navigator.audioSession.type = 'playback';
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+        } catch (e) {}
+      }
+      // L'audio iOS doit être débloqué par un geste de l'utilisateur
+      ['pointerdown', 'touchstart'].forEach((ev) =>
+        document.addEventListener(ev, unlockAudio, { passive: true })
+      );
+
+      function beep(freqs) {
+        if (!audioCtx) return;
+        try {
+          const t0 = audioCtx.currentTime;
+          freqs.forEach((f, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const start = t0 + i * 0.13;
+            osc.type = 'sine';
+            osc.frequency.value = f;
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.exponentialRampToValueAtTime(0.35, start + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.11);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start(start);
+            osc.stop(start + 0.12);
+          });
+        } catch (e) {}
+      }
+
+      let lastVerdictSingle = null;
+      function alertVerdictChange(isSingle) {
+        if (lastVerdictSingle !== null && lastVerdictSingle !== isSingle) {
+          if (isSingle) {
+            hapticPulse(1);          // 1 pulsation
+            beep([880, 1320]);       // bip montant : une seule photo suffit
+          } else {
+            hapticPulse(2);          // 2 pulsations
+            beep([1320, 880]);       // bip descendant : focus stacking
+          }
+        }
+        lastVerdictSingle = isSingle;
+      }
+
+      // ============================================================
       // 7. MISE À JOUR DE L'INTERFACE
       // ============================================================
       function renderLenses() {
@@ -1334,6 +1410,7 @@
 
       function renderResults() {
         const res = calculateStackingParameters();
+        alertVerdictChange(res.isSingleShotEnough);
 
         metricHyperfocal.textContent = formatDistanceFr(res.hyperfocalMeters);
         metricFarLimit.textContent = `${formatDistanceFr(res.nearMeters)} → ${formatDistanceFr(res.farMeters)}`;
