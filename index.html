@@ -735,6 +735,24 @@
     .nav-btn { min-height: 46px; }
     .bottom-nav { padding-top: 6px; padding-bottom: calc(env(safe-area-inset-bottom) + 4px); }
     body { padding-bottom: calc(env(safe-area-inset-bottom) + 72px); }
+
+    /* ===== Remplissage exact de l'écran (calculateur) ===== */
+    #tab-calculator:not(.hidden) {
+      min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - var(--chrome-h, 130px));
+    }
+    #tab-calculator .lens-btn { min-height: 54px; }
+    #tab-calculator .lens-btn .lens-focal { font-size: 16px; }
+    #tab-calculator .lens-btn .lens-sub { font-size: 11px; }
+    #tab-calculator .ap-btn { min-height: 48px; font-size: 12.5px; }
+    #tab-calculator input[type="range"] { margin: 10px 0; }
+    #display-distance { font-size: 22px !important; }
+    #tab-calculator > .card, #tab-calculator > .result-card { flex: 1 1 auto; justify-content: space-evenly; }
+    #tab-calculator .verdict-text { font-size: 13px; }
+    #tab-calculator .metric-val { font-size: 15px; }
+    #tab-calculator .sony-box { padding: 10px 12px; }
+    #tab-calculator .inc-number { font-size: 34px; }
+    #tab-calculator .digit-cell { width: 36px; height: 42px; font-size: 22px; }
+    #tab-calculator .fixed-pill { padding: 10px 12px; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -1461,10 +1479,21 @@
         if (e.target === pwaModal) pwaModal.classList.add('hidden');
       });
 
+      // Hauteur réelle de l'en-tête + barre de navigation, pour que le calculateur remplisse l'écran
+      function measureChrome() {
+        const header = document.querySelector('.app-header').offsetHeight;
+        const nav = document.querySelector('.bottom-nav').offsetHeight;
+        const navInset = parseFloat(getComputedStyle(document.querySelector('.bottom-nav')).paddingBottom) - 4;
+        const mainPad = 10 + 10; // padding haut du conteneur + respiration au-dessus de la barre
+        document.documentElement.style.setProperty('--chrome-h', `${header + nav - Math.max(0, navInset) + mainPad}px`);
+      }
+      window.addEventListener('resize', measureChrome);
+
       // ============================================================
       // 11. INITIALISATION
       // ============================================================
       setupPwaMetadataAndCache();
+      measureChrome();
       switchTab('calculator');
       updateCalculator();
       renderChecklist();

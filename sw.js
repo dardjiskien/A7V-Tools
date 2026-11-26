@@ -1,6 +1,6 @@
 // Service worker : met toute l'app en cache pour un usage 100 % hors-ligne.
 // Incrémente CACHE_VERSION à chaque modification de index.html.
-const CACHE_VERSION = 'a7v-stacking-v4';
+const CACHE_VERSION = 'a7v-stacking-v5';
 const ASSETS = ['./', './index.html', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
