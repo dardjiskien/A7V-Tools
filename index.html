@@ -330,39 +330,6 @@
       cursor: not-allowed;
     }
 
-    /* Raccourcis distance */
-    .chips-row {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-top: 2px;
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
-    .chips-row::-webkit-scrollbar {
-      display: none;
-    }
-
-    .dist-chip {
-      min-height: 44px;
-      padding: 8px 13px;
-      border-radius: 12px;
-      background-color: var(--bg-oled);
-      border: 1px solid var(--border-dark);
-      font-size: 12px;
-      font-weight: 600;
-      color: #e5e7eb;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .dist-chip.active {
-      background-color: var(--sony-orange);
-      border-color: var(--sony-orange);
-      color: #ffffff;
-      font-weight: 700;
-    }
 
     /* Carte de verdict */
     .result-card {
@@ -741,6 +708,33 @@
       font-size: 14px;
       font-weight: 700;
     }
+
+    /* ===== Compactage : tout le calculateur sur un seul écran ===== */
+    .app-header { padding: 8px 14px; }
+    .main-container { padding: 10px 12px 0; }
+    .section-stack { gap: 8px; }
+    #tab-calculator .card { padding: 10px 12px; gap: 8px; border-radius: 14px; }
+    .lens-btn { min-height: 44px; padding: 4px; border-radius: 11px; gap: 0; }
+    .lens-btn .lens-focal { font-size: 14px; }
+    .lens-btn .lens-sub { font-size: 10px; }
+    .zoom-box { padding-top: 8px; gap: 4px; }
+    .aperture-grid { grid-template-columns: repeat(8, 1fr); gap: 4px; }
+    .ap-btn { min-height: 40px; border-radius: 10px; font-size: 11.5px; padding: 0; letter-spacing: -0.03em; }
+    input[type="range"] { margin: 6px 0; }
+    .result-card { padding: 10px 12px; gap: 8px; border-radius: 16px; }
+    .verdict-badge { padding: 3px 10px; font-size: 10.5px; }
+    .verdict-text { font-size: 12px; line-height: 1.35; margin-top: 5px; }
+    .metrics-grid { padding: 8px 10px; gap: 8px; border-radius: 11px; }
+    .metric-val { font-size: 13px; }
+    .sony-grid { gap: 8px; }
+    .sony-box { padding: 8px 10px; gap: 4px; border-radius: 11px; }
+    .inc-number { font-size: 26px; }
+    .digit-cell { width: 30px; height: 34px; font-size: 18px; }
+    .fixed-pills { gap: 8px; }
+    .fixed-pill { padding: 7px 10px; border-radius: 10px; }
+    .nav-btn { min-height: 46px; }
+    .bottom-nav { padding-top: 6px; padding-bottom: calc(env(safe-area-inset-bottom) + 4px); }
+    body { padding-bottom: calc(env(safe-area-inset-bottom) + 72px); }
   </style>
 </head>
 <body>
@@ -834,17 +828,8 @@
           <span id="display-distance" style="font-family:var(--font-mono);font-size:18px;font-weight:800;color:#ffffff;">50 cm</span>
         </div>
 
-        <input id="slider-distance" type="range" min="0.25" max="15" step="0.05" value="0.50" />
+        <input id="slider-distance" type="range" min="0" max="1000" step="1" value="169" />
 
-        <!-- Raccourcis tactiles de distance -->
-        <div class="chips-row">
-          <button type="button" data-dist="0.30" class="dist-chip">30 cm (Très proche)</button>
-          <button type="button" data-dist="0.50" class="dist-chip">50 cm</button>
-          <button type="button" data-dist="1.00" class="dist-chip">1 m</button>
-          <button type="button" data-dist="2.50" class="dist-chip">2,5 m</button>
-          <button type="button" data-dist="5.00" class="dist-chip">5 m</button>
-          <button type="button" data-dist="10.00" class="dist-chip">10 m</button>
-        </div>
       </div>
 
       <!-- 4. Carte de Verdict & Réglages Sony A7 V -->
@@ -869,7 +854,7 @@
         </div>
 
         <!-- Réglages exacts à entrer dans le Sony A7 V -->
-        <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:6px;">
           <div class="card-header">
             <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--sony-orange);">Réglages Sony A7 V</span>
             <span style="font-size:11px;color:var(--text-muted);">Menu Brack. m. au pt</span>
@@ -1044,7 +1029,7 @@
         </div>
         <div class="modal-step">
           <span class="step-badge" style="width:24px;height:24px;font-size:12px;">2</span>
-          <span>Appuie sur <strong>Partager</strong> (carré avec flèche vers le haut) en bas de Safari, puis sur <strong>« Sur l'écran d'accueil »</strong> → <strong>Ajouter</strong>.</span>
+          <span>Appuie sur <strong>•••</strong> à côté de la barre d'adresse → <strong>Partager</strong> → fais défiler → <strong>« Sur l'écran d'accueil »</strong>. Laisse <strong>Ouvrir comme app web</strong> activé → <strong>Ajouter</strong>.</span>
         </div>
         <div class="modal-step">
           <span class="step-badge" style="width:24px;height:24px;font-size:12px;">3</span>
@@ -1179,7 +1164,6 @@
       const apertureTip = document.getElementById('aperture-tip');
       const sliderDistance = document.getElementById('slider-distance');
       const displayDistance = document.getElementById('display-distance');
-      const distChips = document.querySelectorAll('.dist-chip');
 
       const resultCard = document.getElementById('result-card');
       const verdictBadge = document.getElementById('verdict-badge');
@@ -1317,14 +1301,17 @@
         });
       }
 
+      // Curseur logarithmique : précision fine de près, grossière au loin
+      const D_MIN = 0.25, D_MAX = 15;
+      const sliderToDist = (v) => {
+        const d = D_MIN * Math.pow(D_MAX / D_MIN, v / 1000);
+        return d < 1 ? Math.round(d * 100) / 100 : d < 5 ? Math.round(d * 20) / 20 : Math.round(d * 4) / 4;
+      };
+      const distToSlider = (d) => Math.round((1000 * Math.log(d / D_MIN)) / Math.log(D_MAX / D_MIN));
+
       function renderDistance() {
         displayDistance.textContent = formatDistanceFr(state.distance);
-        sliderDistance.value = state.distance;
-
-        distChips.forEach((chip) => {
-          const val = parseFloat(chip.getAttribute('data-dist'));
-          chip.classList.toggle('active', Math.abs(val - state.distance) < 0.01);
-        });
+        sliderDistance.value = distToSlider(state.distance);
       }
 
       function renderResults() {
@@ -1444,15 +1431,8 @@
       });
 
       sliderDistance.addEventListener('input', (e) => {
-        state.distance = parseFloat(e.target.value);
+        state.distance = sliderToDist(parseInt(e.target.value, 10));
         updateCalculator();
-      });
-
-      distChips.forEach((chip) => {
-        chip.addEventListener('click', () => {
-          state.distance = parseFloat(chip.getAttribute('data-dist'));
-          updateCalculator();
-        });
       });
 
       document.querySelectorAll('.nav-btn').forEach((btn) => {
