@@ -1292,7 +1292,7 @@
 
       function hapticPulse(count) {
         if (navigator.vibrate) {
-          navigator.vibrate(count === 1 ? 60 : [60, 90, 60]);
+          navigator.vibrate(60);
           return;
         }
         for (let i = 0; i < count; i++) {
@@ -1303,8 +1303,7 @@
       let audioCtx = null;
       function unlockAudio() {
         try {
-          // « playback » : le bip sonne même si l'iPhone est en mode silencieux
-          if (navigator.audioSession) navigator.audioSession.type = 'playback';
+          // Session audio par défaut : le bip respecte le mode silencieux de l'iPhone
           if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
           if (audioCtx.state === 'suspended') audioCtx.resume();
         } catch (e) {}
@@ -1337,13 +1336,9 @@
       let lastVerdictSingle = null;
       function alertVerdictChange(isSingle) {
         if (lastVerdictSingle !== null && lastVerdictSingle !== isSingle) {
-          if (isSingle) {
-            hapticPulse(1);          // 1 pulsation
-            beep([880, 1320]);       // bip montant : une seule photo suffit
-          } else {
-            hapticPulse(2);          // 2 pulsations
-            beep([1320, 880]);       // bip descendant : focus stacking
-          }
+          // Même signal dans les deux sens : 1 pulsation + 1 bip
+          hapticPulse(1);
+          beep([1000]);
         }
         lastVerdictSingle = isSingle;
       }
