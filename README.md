@@ -7,4 +7,4 @@ Calculateur terrain de focus stacking (24 mm GM, Sigma 35 mm Art, 70-200 f/4 Mac
 
 **Installation sur iPhone** : ouvrir https://dardjiskien.github.io/A7V-Tools/ dans Safari → Partager → « Sur l'écran d'accueil ». L'app fonctionne ensuite sans réseau.
 
-Après modification de `index.html`, incrémenter `CACHE_VERSION` dans `sw.js` pour que l'iPhone récupère la nouvelle version.
+Après modification de `index.html`, incrémenter `CACHE_VERSION` dans `sw.js` et `APP_VERSION` dans `index.html` pour que l'iPhone récupère la nouvelle version.

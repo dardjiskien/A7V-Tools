@@ -56,7 +56,7 @@
     }
 
     body {
-      padding-top: env(safe-area-inset-top);
+      padding-top: calc(env(safe-area-inset-top) + 8px);
       padding-bottom: calc(env(safe-area-inset-bottom) + 88px);
     }
 
@@ -1051,7 +1051,7 @@
         </div>
         <div class="modal-step">
           <span class="step-badge" style="width:24px;height:24px;font-size:12px;">3</span>
-          <span>Vérifie que la pastille en haut affiche <strong style="color:#6ee7b7;">Prêt hors-ligne</strong> : tu peux couper le réseau, l'icône fonctionnera partout.</span>
+          <span>Vérifie que la pastille en haut affiche <strong style="color:#6ee7b7;">Hors-ligne · v…</strong> : tu peux couper le réseau, l'icône fonctionnera partout.</span>
         </div>
       </div>
 
@@ -1066,6 +1066,8 @@
       // ============================================================
       // 1. MODE HORS-LIGNE : enregistrement du service worker (sw.js)
       // ============================================================
+      const APP_VERSION = 'v8';
+
       function setupPwaMetadataAndCache() {
         const offlinePill = document.getElementById('offline-indicator');
         const offlineText = document.getElementById('offline-text');
@@ -1075,7 +1077,7 @@
         };
 
         if (!window.location.protocol.startsWith('http')) {
-          setReady('Fichier local');
+          setReady('Local · ' + APP_VERSION);
           return;
         }
         if (!('serviceWorker' in navigator)) {
@@ -1087,8 +1089,8 @@
           .then(() => navigator.serviceWorker.ready)
           .then(() => caches.match('./index.html'))
           .then((hit) => {
-            if (hit) setReady('Prêt hors-ligne');
-            else setTimeout(() => setReady('Prêt hors-ligne'), 1500);
+            if (hit) setReady('Hors-ligne · ' + APP_VERSION);
+            else setTimeout(() => setReady('Hors-ligne · ' + APP_VERSION), 1500);
           })
           .catch(() => {
             offlineText.textContent = 'Cache indisponible';
@@ -1295,9 +1297,7 @@
           navigator.vibrate(60);
           return;
         }
-        for (let i = 0; i < count; i++) {
-          setTimeout(() => { try { hapticLabel.click(); } catch (e) {} }, i * 140);
-        }
+        try { hapticLabel.click(); } catch (e) {}
       }
 
       let audioCtx = null;
@@ -1309,7 +1309,7 @@
         } catch (e) {}
       }
       // L'audio iOS doit être débloqué par un geste de l'utilisateur
-      ['pointerdown', 'touchstart'].forEach((ev) =>
+      ['pointerdown', 'touchstart', 'touchend', 'pointerup', 'click'].forEach((ev) =>
         document.addEventListener(ev, unlockAudio, { passive: true })
       );
 
@@ -1336,12 +1336,27 @@
       let lastVerdictSingle = null;
       function alertVerdictChange(isSingle) {
         if (lastVerdictSingle !== null && lastVerdictSingle !== isSingle) {
-          // Même signal dans les deux sens : 1 pulsation + 1 bip
-          hapticPulse(1);
-          beep([1000]);
+          const ua = navigator.userActivation;
+          if (ua && !ua.isActive) {
+            pendingAlert = true; // iOS bloque haptique/son pendant le glissement : on attend le lever du doigt
+          } else {
+            fireAlert();
+          }
         }
         lastVerdictSingle = isSingle;
       }
+
+      // Même signal dans les deux sens : 1 pulsation + 1 bip
+      let pendingAlert = false;
+      function fireAlert() {
+        pendingAlert = false;
+        unlockAudio();
+        hapticPulse(1);
+        beep([1000]);
+      }
+      ['touchend', 'pointerup', 'change'].forEach((ev) =>
+        document.addEventListener(ev, () => { if (pendingAlert) fireAlert(); }, { passive: true })
+      );
 
       // ============================================================
       // 7. MISE À JOUR DE L'INTERFACE
@@ -1556,7 +1571,7 @@
         const header = document.querySelector('.app-header').offsetHeight;
         const nav = document.querySelector('.bottom-nav').offsetHeight;
         const navInset = parseFloat(getComputedStyle(document.querySelector('.bottom-nav')).paddingBottom) - 4;
-        const mainPad = 10 + 10; // padding haut du conteneur + respiration au-dessus de la barre
+        const mainPad = 8 + 10 + 10; // marge haute + padding du conteneur + respiration au-dessus de la barre
         document.documentElement.style.setProperty('--chrome-h', `${header + nav - Math.max(0, navInset) + mainPad}px`);
       }
       window.addEventListener('resize', measureChrome);
